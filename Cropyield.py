@@ -6,6 +6,7 @@ from tkinter.filedialog import askopenfilename
 import pandas as pd 
 from tkinter import simpledialog
 import matplotlib.pyplot as plt
+import tensorflow as tf
 import os
 import pandas as pd
 import numpy as np
@@ -105,25 +106,24 @@ def runRNN():
         with open('model/rnnmodel.json', "r") as json_file:
             loaded_model_json = json_file.read()
             classifier = model_from_json(loaded_model_json)
-        classifier.load_weights("model/rnnmodel_weights.h5")
-        classifier._make_predict_function()   
-        print(classifier.summary())
-        f = open('model/rnnhistory.pckl', 'rb')
-        data = pickle.load(f)
-        f.close()
-        accuracy = data[1] * 100
-        rnn_acc = accuracy
-        text.insert(END,'RNN Prediction Accuracy : '+str(accuracy)+"\n\n")
+            classifier.load_weights("model/rnnmodel_weights.h5")
+            print(classifier.summary())
+            f = open('model/rnnhistory.pckl', 'rb')
+            data = pickle.load(f)
+            f.close()
+            accuracy = data[1] * 100
+            rnn_acc = accuracy
+            text.insert(END,'RNN Prediction Accuracy : '+str(accuracy)+"\n\n")
     else:
         class_weight = {0: weight_for_0, 1: weight_for_1}
-        rnn = Sequential() #creating RNN model object
-        rnn.add(Dense(256, input_dim=X.shape[1], activation='relu', kernel_initializer = "uniform")) #defining one layer with 256 filters to filter dataset
-        rnn.add(Dense(128, activation='relu', kernel_initializer = "uniform"))#defining another layer to filter dataset with 128 layers
-        rnn.add(Dense(Y.shape[1], activation='softmax',kernel_initializer = "uniform")) #after building model need to predict two classes such as normal or Dyslipidemia disease
-        rnn.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy']) #while filtering and training dataset need to display accuracy 
-        print(rnn.summary()) #display rnn details
-        rnn_acc = rnn.fit(X, Y, epochs=2, batch_size=64,class_weight=class_weight) #start building RNN model
-        values = rnn_acc.history #save each epoch accuracy and loss
+        rnn = Sequential()
+        rnn.add(Dense(256, input_dim=X.shape[1], activation='relu', kernel_initializer = "uniform"))
+        rnn.add(Dense(128, activation='relu', kernel_initializer = "uniform"))
+        rnn.add(Dense(Y.shape[1], activation='softmax',kernel_initializer = "uniform"))
+        rnn.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+        print(rnn.summary())
+        rnn_acc = rnn.fit(X, Y, epochs=2, batch_size=64,class_weight=class_weight)
+        values = rnn_acc.history
         values = values['accuracy']
         acc = values[1] * 100
         rnn_acc = acc;
@@ -137,31 +137,31 @@ def runRNN():
         with open("model/rnnmodel.json", "w") as json_file:
             json_file.write(model_json)
 
+
 def runLSTM():
     global lstm_acc
     if os.path.exists('model/lstmmodel.json'):
         with open('model/lstmmodel.json', "r") as json_file:
             loaded_model_json = json_file.read()
             classifier1 = model_from_json(loaded_model_json)
-        classifier1.load_weights("model/lstmmodel_weights.h5")
-        classifier1._make_predict_function()   
-        print(classifier1.summary())
-        f = open('model/lstmhistory.pckl', 'rb')
-        data = pickle.load(f)
-        f.close()
-        accuracy = data[1] * 100
-        lstm_acc = accuracy
-        text.insert(END,'LSTM Prediction Accuracy : '+str(accuracy)+"\n\n")
+            classifier1.load_weights("model/lstmmodel_weights.h5")
+            print(classifier1.summary())
+            f = open('model/lstmhistory.pckl', 'rb')
+            data = pickle.load(f)
+            f.close()
+            accuracy = data[1] * 100
+            lstm_acc = accuracy
+            text.insert(END,'LSTM Prediction Accuracy : '+str(accuracy)+"\n\n")
     else:
         XX = X.reshape((X.shape[0], X.shape[1], 1)) 
-        model = Sequential() #creating LSTM model object
-        model.add(keras.layers.LSTM(512,input_shape=(X.shape[1], 1))) #defining LSTM layer in sequential object
-        model.add(Dropout(0.5)) #removing irrelevant dataset features
-        model.add(Dense(256, activation='relu'))#create another layer
-        model.add(Dense(Y.shape[1], activation='softmax'))#predict two values as normal or Dyslipidemia disease
-        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])#calculate accuracy
+        model = Sequential()
+        model.add(keras.layers.LSTM(512,input_shape=(X.shape[1], 1)))
+        model.add(Dropout(0.5))
+        model.add(Dense(256, activation='relu'))
+        model.add(Dense(Y.shape[1], activation='softmax'))
+        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         print(model.summary())
-        lstm_acc = model.fit(XX, Y, epochs=2, batch_size=64) #start training model
+        lstm_acc = model.fit(XX, Y, epochs=2, batch_size=64)
         values = lstm_acc.history
         values = values['accuracy']
         acc = values[1] * 100
@@ -175,22 +175,22 @@ def runLSTM():
         model_json = classifier1.to_json()
         with open("model/lstmmodel.json", "w") as json_file:
             json_file.write(model_json)
-        
 
+        
 def runFF():
     global ff_acc
     model = Sequential([
-        Dense(64, activation='relu', input_shape=(X.shape[1],)),
-        Dense(64, activation='relu'),
-        Dense(2, activation='softmax')])
+        tf.keras.layers.Dense(64, activation='relu', input_shape=(X.shape[1],)),
+        tf.keras.layers.Dense(64, activation='relu'),
+        tf.keras.layers.Dense(2, activation='softmax')])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     print(model.summary())
-    lstm_acc = model.fit(X, Y, epochs=2, batch_size=64) #start training model
+    lstm_acc = model.fit(X, Y, epochs=2, batch_size=64)
     values = lstm_acc.history
     values = values['accuracy']
     ff_acc = values[1] * 100
     text.insert(END,'Feed Forward Neural Network Prediction Accuracy : '+str(ff_acc)+"\n\n")
-    
+
 
 def predict():
     text.delete('1.0', END)
